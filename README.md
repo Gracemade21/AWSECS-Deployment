@@ -170,7 +170,46 @@ aws elbv2 create-listener --load-balancer-arn <LB_ARN> --protocol HTTP --port 80
 
 ---
 
-## **Step 6: Deploy ECS Service with Load Balancer**
+### ** Step 6: Deploy to AWS ECS**
+
+### **6.1. Create an ECS Cluster**
+
+```cmd
+aws ecs create-cluster --cluster-name musician-cluster
+```
+
+### **6.2 Define a Task Definition**
+
+### **Create a file task-definition.json:**
+
+```cmd
+{
+  "family": "musician-app",
+  "containerDefinitions": [
+    {
+      "name": "musician-app",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/musician-app:latest",
+      "memory": 512,
+      "cpu": 256,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3001,
+          "hostPort": 3001
+        }
+      ]
+    }
+  ]
+}
+```
+
+## **Register the task definition:**
+
+```cmd
+aws ecs register-task-definition --cli-input-json file://task-definition.json
+```
+
+## **Step 6.3: Deploy ECS Service with Load Balancer**
 
 ```cmd
 aws ecs create-service --cluster musician-cluster --service-name musician-service --task-definition musician-app --desired-count 3 --launch-type FARGATE --network-configuration "awsvpcConfiguration={subnets=[<SUBNET_1>,<SUBNET_2>],securityGroups=[sg-ecs],assignPublicIp=ENABLED}" --load-balancers "targetGroupArn=<TARGET_GROUP_ARN>,containerName=musician-app,containerPort=3001"
